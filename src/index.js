@@ -1,40 +1,44 @@
-import React, {Component} from 'react';
+import React, { Component } from "react";
 import {
-  View,
-  StyleSheet,
-  Dimensions,
   Animated,
-  TouchableOpacity,
+  Dimensions,
   Image,
-} from 'react-native';
-import * as d3Shape from 'd3-shape';
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import * as d3Shape from "d3-shape";
 
-import Svg, {G, Text, TSpan, Path, Pattern} from 'react-native-svg';
+import Svg, { G, Path, Text, TSpan } from "react-native-svg";
 
 const AnimatedSvg = Animated.createAnimatedComponent(Svg);
 
-const {width, height} = Dimensions.get('screen');
+const { width: screenWidth, height: screenHeight } = Dimensions.get("screen");
 
 class WheelOfFortune extends Component {
   constructor(props) {
     super(props);
+    this.width = this.props.options.width || screenWidth;
+    this.height = this.props.options.height || screenHeight;
+    this.angle = 0;
+
     this.state = {
       enabled: false,
       started: false,
       finished: false,
       winner: null,
-      gameScreen: new Animated.Value(width - 40),
+      gameScreen: new Animated.Value(this.width - 40),
       wheelOpacity: new Animated.Value(1),
-      imageLeft: new Animated.Value(width / 2 - 30),
-      imageTop: new Animated.Value(height / 2 - 70),
+      imageLeft: new Animated.Value(this.width / 2 - 30),
+      imageTop: new Animated.Value(this.height / 2 - 70),
     };
-    this.angle = 0;
-
     this.prepareWheel();
   }
 
   prepareWheel = () => {
-    this.Rewards = this.props.options.rewards;
+    this.Rewards = !!this.props.options.shuffle
+      ? this.props.options.rewards.sort(() => 0.5 * Math.random())
+      : this.props.options.rewards;
     this.RewardCount = this.Rewards.length;
 
     this.numberOfSegments = this.RewardCount;
@@ -47,33 +51,13 @@ class WheelOfFortune extends Component {
       : Math.floor(Math.random() * this.numberOfSegments);
 
     this._wheelPaths = this.makeWheel();
-    this._angle = new Animated.Value(0);
+    this._angle = new Animated.Value(Math.random() * 360);
 
     this.props.options.onRef(this);
   };
 
-  resetWheelState = () => {
-    this.setState({
-      enabled: false,
-      started: false,
-      finished: false,
-      winner: null,
-      gameScreen: new Animated.Value(width - 40),
-      wheelOpacity: new Animated.Value(1),
-      imageLeft: new Animated.Value(width / 2 - 30),
-      imageTop: new Animated.Value(height / 2 - 70),
-    });
-  };
-
-  _tryAgain = () => {
-    this.prepareWheel();
-    this.resetWheelState();
-    this.angleListener();
-    this._onPress();
-  };
-
   angleListener = () => {
-    this._angle.addListener(event => {
+    this._angle.addListener((event) => {
       if (this.state.enabled) {
         this.setState({
           enabled: false,
@@ -94,27 +78,27 @@ class WheelOfFortune extends Component {
   }
 
   makeWheel = () => {
-    const data = Array.from({length: this.numberOfSegments}).fill(1);
+    const data = Array.from({ length: this.numberOfSegments }).fill(1);
     const arcs = d3Shape.pie()(data);
-    var colors = this.props.options.colors
+    const colors = this.props.options.colors
       ? this.props.options.colors
       : [
-          '#E07026',
-          '#E8C22E',
-          '#ABC937',
-          '#4F991D',
-          '#22AFD3',
-          '#5858D0',
-          '#7B48C8',
-          '#D843B9',
-          '#E23B80',
-          '#D82B2B',
+          "#E07026",
+          "#E8C22E",
+          "#ABC937",
+          "#4F991D",
+          "#22AFD3",
+          "#5858D0",
+          "#7B48C8",
+          "#D843B9",
+          "#E23B80",
+          "#D82B2B",
         ];
     return arcs.map((arc, index) => {
       const instance = d3Shape
         .arc()
         .padAngle(0.01)
-        .outerRadius(width / 2)
+        .outerRadius(this.width / 2)
         .innerRadius(this.props.options.innerRadius || 100);
       return {
         path: instance(arc),
@@ -138,12 +122,11 @@ class WheelOfFortune extends Component {
     );
   };
 
-  _onPress = () => {
+  start = () => {
     const duration = this.props.options.duration || 10000;
 
-    this.setState({
-      started: true,
-    });
+    this.setState({ started: true });
+
     Animated.timing(this._angle, {
       toValue:
         365 -
@@ -161,38 +144,45 @@ class WheelOfFortune extends Component {
     });
   };
 
-  _textRender = (x, y, number, i) => (
-    <Text
-      x={x - number.length * 5}
-      y={y - 80}
-      fill={
-        this.props.options.textColor ? this.props.options.textColor : '#fff'
-      }
-      textAnchor="middle"
-      fontSize={this.fontSize}>
-      {Array.from({length: number.length}).map((_, j) => {
-        // Render reward text vertically
-        if (this.props.options.textAngle === 'vertical') {
-          return (
-            <TSpan x={x} dy={this.fontSize} key={`arc-${i}-slice-${j}`}>
-              {number.charAt(j)}
-            </TSpan>
-          );
-        }
-        // Render reward text horizontally
-        else {
-          return (
-            <TSpan
-              y={y - 40}
-              dx={this.fontSize * 0.07}
-              key={`arc-${i}-slice-${j}`}>
-              {number.charAt(j)}
-            </TSpan>
-          );
-        }
-      })}
-    </Text>
-  );
+  _textRender = (x, y, number, index) => {
+    const colors = this.props.options.textColors
+      ? this.props.options.textColors
+      : ["#fff"];
+
+    return (
+      <Text
+        x={x - number.length * 5}
+        y={y - 80}
+        fill={colors[index % colors.length]}
+        textAnchor="middle"
+        fontSize={this.fontSize}
+        fontWeight={this.props.options.fontWeight || "normal"}
+      >
+        {Array.from({ length: number.length }).map((_, j) => {
+          // Render reward text vertically
+          if (this.props.options.textAngle === "vertical") {
+            return (
+              <TSpan x={x} dy={this.fontSize} key={`arc-${index}-slice-${j}`}>
+                {number.charAt(j)}
+              </TSpan>
+            );
+          }
+          // Render reward text horizontally
+          else {
+            return (
+              <TSpan
+                y={y - 40}
+                dx={this.fontSize * 0.07}
+                key={`arc-${index}-slice-${j}`}
+              >
+                {number.charAt(j)}
+              </TSpan>
+            );
+          }
+        })}
+      </Text>
+    );
+  };
 
   _renderSvgWheel = () => {
     return (
@@ -200,8 +190,8 @@ class WheelOfFortune extends Component {
         {this._renderKnob()}
         <Animated.View
           style={{
-            alignItems: 'center',
-            justifyContent: 'center',
+            alignItems: "center",
+            justifyContent: "center",
             transform: [
               {
                 rotate: this._angle.interpolate({
@@ -216,27 +206,29 @@ class WheelOfFortune extends Component {
             ],
             backgroundColor: this.props.options.backgroundColor
               ? this.props.options.backgroundColor
-              : '#fff',
-            width: width - 20,
-            height: width - 20,
-            borderRadius: (width - 20) / 2,
+              : "#fff",
+            width: this.width - 20,
+            height: this.width - 20,
+            borderRadius: (this.width - 20) / 2,
             borderWidth: this.props.options.borderWidth
               ? this.props.options.borderWidth
               : 2,
             borderColor: this.props.options.borderColor
               ? this.props.options.borderColor
-              : '#fff',
+              : "#fff",
             opacity: this.state.wheelOpacity,
-          }}>
+          }}
+        >
           <AnimatedSvg
             width={this.state.gameScreen}
             height={this.state.gameScreen}
-            viewBox={`0 0 ${width} ${width}`}
+            viewBox={`0 0 ${this.width} ${this.width}`}
             style={{
-              transform: [{rotate: `-${this.angleOffset}deg`}],
+              transform: [{ rotate: `-${this.angleOffset}deg` }],
               margin: 10,
-            }}>
-            <G y={width / 2} x={width / 2}>
+            }}
+          >
+            <G y={this.width / 2} x={this.width / 2}>
               {this._wheelPaths.map((arc, i) => {
                 const [x, y] = arc.centroid;
                 const number = arc.value.toString();
@@ -249,7 +241,8 @@ class WheelOfFortune extends Component {
                         (i * this.oneTurn) / this.numberOfSegments +
                         this.angleOffset
                       }
-                      origin={`${x}, ${y}`}>
+                      origin={`${x}, ${y}`}
+                    >
                       {this._textRender(x, y, number, i)}
                     </G>
                   </G>
@@ -271,49 +264,52 @@ class WheelOfFortune extends Component {
       Animated.divide(
         Animated.modulo(
           Animated.subtract(this._angle, this.angleOffset),
-          this.oneTurn,
+          this.oneTurn
         ),
-        new Animated.Value(this.angleBySegment),
+        new Animated.Value(this.angleBySegment)
       ),
-      1,
+      1
     );
 
     return (
       <Animated.View
         style={{
+          ...this.props.options.knobStyle,
+          opacity: this.state.wheelOpacity,
+          justifyContent: "flex-end",
+          zIndex: 1,
           width: knobSize,
           height: knobSize * 2,
-          justifyContent: 'flex-end',
-          zIndex: 1,
-          opacity: this.state.wheelOpacity,
           transform: [
             {
               rotate: YOLO.interpolate({
                 inputRange: [-1, -0.5, -0.0001, 0.0001, 0.5, 1],
                 outputRange: [
-                  '0deg',
-                  '0deg',
-                  '35deg',
-                  '-35deg',
-                  '0deg',
-                  '0deg',
+                  "0deg",
+                  "0deg",
+                  "35deg",
+                  "-35deg",
+                  "0deg",
+                  "0deg",
                 ],
               }),
             },
           ],
-        }}>
+        }}
+      >
         <Svg
           width={knobSize}
           height={(knobSize * 100) / 57}
           viewBox={`0 0 57 100`}
           style={{
-            transform: [{translateY: 8}],
-          }}>
+            transform: [{ translateY: 8 }],
+          }}
+        >
           <Image
             source={
               this.props.options.knobSource
                 ? this.props.options.knobSource
-                : require('../assets/images/knob.png')
+                : require("../assets/images/knob.png")
             }
             style={{ width: knobSize, height: (knobSize * 100) / 57 }}
           />
@@ -323,9 +319,9 @@ class WheelOfFortune extends Component {
   };
 
   _renderTopToPlay() {
-    if (this.state.started == false) {
+    if (this.state.started === false) {
       return (
-        <TouchableOpacity onPress={() => this._onPress()}>
+        <TouchableOpacity onPress={() => this.start()}>
           {this.props.options.playButton()}
         </TouchableOpacity>
       );
@@ -335,18 +331,9 @@ class WheelOfFortune extends Component {
   render() {
     return (
       <View style={styles.container}>
-        <TouchableOpacity
-          style={{
-            position: 'absolute',
-            width: width,
-            height: height / 2,
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}>
-          <Animated.View style={[styles.content, {padding: 10}]}>
-            {this._renderSvgWheel()}
-          </Animated.View>
-        </TouchableOpacity>
+        <Animated.View style={styles.content}>
+          {this._renderSvgWheel()}
+        </Animated.View>
         {this.props.options.playButton ? this._renderTopToPlay() : null}
       </View>
     );
@@ -358,16 +345,10 @@ export default WheelOfFortune;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
-  content: {},
-  startText: {
-    fontSize: 50,
-    color: '#fff',
-    fontWeight: 'bold',
-    textShadowColor: 'rgba(0, 0, 0, 0.4)',
-    textShadowOffset: {width: -1, height: 1},
-    textShadowRadius: 10,
+  content: {
+    padding: 10,
   },
 });

@@ -45,6 +45,9 @@ playButton | `render()` | example | Render method for tap to play button
 innerRadius | `Number` | 100 | Set inner radius size
 innerRadius | `Number` | 100 | Set inner radius size
 textAngle | `String` | horizontal | Set angle of reward text
+width | `String` | horizontal | Set width of container
+height | `String` | horizontal | Set height of container
+shuffle | `String` | horizontal | shuffle of rewards
 
 ## Usage
 ```js
@@ -63,12 +66,15 @@ const wheelOptions = {
       rewards: participants,
       knobSize: 50,
       borderWidth: 5,
-      borderColor: '#000',
+      textColors: ['#000'],
       innerRadius: 50,
       duration: 4000,
       backgroundColor: 'transparent',
       textAngle: 'horizontal',
       knobSource: require('./assets/images/knoob.png'),
+      knobStyle: {
+        top: 20 
+      },
       getWinner: (value, index) => {
         this.setState({winnerValue: value, winnerIndex: index});
       },
@@ -77,7 +83,7 @@ const wheelOptions = {
 <WheelOfFortune
     options={wheelOptions}
 />
-<Button title="Press me" onPress={ () => { this.child._onPress() } } />
+<Button title="Press me" onPress={ () => { this.child.start() } } />
 ```
 For more information and test go to [/Example](https://github.com/eftalyurtseven/react-native-wheel-of-fortune/tree/master/Example) folder.
 
