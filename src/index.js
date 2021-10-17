@@ -37,7 +37,7 @@ class WheelOfFortune extends Component {
 
   prepareWheel = () => {
     this.Rewards = !!this.props.options.shuffle
-      ? this.props.options.rewards.sort(() => 0.5 * Math.random())
+      ? this.props.options.rewards.sort(() => 0.5 - Math.random())
       : this.props.options.rewards;
     this.RewardCount = this.Rewards.length;
 
@@ -51,7 +51,7 @@ class WheelOfFortune extends Component {
       : Math.floor(Math.random() * this.numberOfSegments);
 
     this._wheelPaths = this.makeWheel();
-    this._angle = new Animated.Value(Math.random() * 360);
+    this._angle = new Animated.Value(0);
 
     this.props.options.onRef(this);
   };

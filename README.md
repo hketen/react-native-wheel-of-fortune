@@ -45,9 +45,9 @@ playButton | `render()` | example | Render method for tap to play button
 innerRadius | `Number` | 100 | Set inner radius size
 innerRadius | `Number` | 100 | Set inner radius size
 textAngle | `String` | horizontal | Set angle of reward text
-width | `String` | horizontal | Set width of container
-height | `String` | horizontal | Set height of container
-shuffle | `String` | horizontal | shuffle of rewards
+width | `String` | Screen width | Set width of container
+height | `String` | Screen height | Set height of container
+shuffle | `String` | false | shuffle of rewards
 
 ## Usage
 ```js
